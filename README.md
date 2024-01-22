@@ -1,35 +1,48 @@
-# Home Assistant Raspberry Pi GPIO custom integration
+# Home Assistant GPIO Integration
 
-**This is a spin-off from the original Home Assistant integration, which was removed in Home Assistant Core version 2022.6.**
+**This is a libgpiod2 rewrite of https://github.com/thecode/ha-gpio by @thecode.**
 
-The `rpi_gpio` integration supports the following platforms: `Binary Sensor`, `Cover`, `Switch`
+The `gpio` integration supports the following platforms: `Binary Sensor`, `Cover`, `Switch`.
+It supports any device with libgpiod 2.0.2 or later, i.e. all versions of Raspberry Pi, 
+including Raspberry Pi 5. The platform will guess sensible defaults, or you can use `device` 
+and `port` when defining entities to select the GPIO device (a.k.a chip) and port (a.k.a line).
+
+Note that `port` referrs to the GPIO number, not the pin number.  This can be unintuitive on some
+platforms, e.g. the Raspberry Pi.  For example, if you have a relay connected to pin 11 of the
+Raspberry Pi, its GPIO # is 17. See the [Wikipedia article about the Raspberry Pi](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) for more details about the GPIO layout.
+
 
 # Installation
 
-### HACS
+## HACS
 
-The recommend way to install `rpi_gpio` is through [HACS](https://hacs.xyz/).
+The recommend way to install `gpio` is through [HACS](https://hacs.xyz/).
 
-### Manual installation
+## Manual installation
 
-Copy the `rpi_gpio` folder and all of its contents into your Home Assistant's `custom_components` folder. This folder is usually inside your `/config` folder. If you are running Hass.io, use SAMBA to copy the folder over. You may need to create the `custom_components` folder and then copy the `rpi_gpio` folder and all of its contents into it.
+Copy the `gpio` folder and all of its contents into your Home Assistant's 
+`custom_components` folder. This folder is usually inside your `/config` 
+folder. If you are running Hass.io, use SAMBA to copy the folder over. You 
+may need to create the `custom_components` folder and then copy the `gpio` 
+folder and all of its contents into it.
+
 
 # Usage
 
 ## Binary Sensor
 
-The `rpi_gpio` binary sensor platform allows you to read sensor values of the GPIOs of your [Raspberry Pi](https://www.raspberrypi.org/).
+The `gpio` binary sensor platform allows you to read sensor values of the GPIOs of your device.  
 
 ### Configuration
 
-[Legacy binary sensor configuration](https://github.com/thecode/ha-rpi_gpio/blob/main/legacy-config.md#binary-sensor)
+[Legacy binary sensor configuration](./legacy-config.md#binary-sensor)
 
-To use your Raspberry Pi's GPIO in your installation, add the following to your `configuration.yaml` file:
+Add the following to your `configuration.yaml` file:
 
 ```yaml
 # Basic configuration.yaml entry
 binary_sensor:
-  - platform: rpi_gpio
+  - platform: gpio
     sensors:
       - port: 11
         name: "PIR Office"
@@ -40,17 +53,15 @@ binary_sensor:
 ```yaml
 # Full configuration.yaml entry
 binary_sensor:
-  - platform: rpi_gpio
+  - platform: gpio
     sensors:
       - port: 11
+        device: "/dev/gpiochip4"
         name: "PIR Office"
         unique_id: "pir_office_sensor_port_11"
         bouncetime: 80
         invert_logic: true
         pull_mode: "DOWN"
-      - port: 12
-        name: "PIR Bedroom"
-        unique_id: "pir_bedroom_sensor_port_12"
 ```
 
 ### Options
@@ -58,33 +69,34 @@ binary_sensor:
 | Key            | Required | Default               | Type    | Description                                                                                                 |
 | -------------- | -------- | --------------------- | --------|------------------------------------------------------------------------------------------------------------ |
 | `sensors`      | yes      |                       | list    | List of sensor IO ports ([BCM mode pin numbers](https://pinout.xyz/resources/raspberry-pi-pinout.png))      |
+| `port`         | yes      |                       | integer | The GPIO port (a.k.a line) number |
 | `name`         | yes      |                       | string  | The name for the binary sensor entity                                                                       |
+| `device`       | no       | Hardware dependent    | string  | Path to the GPIO device, e.g. `/dev/gpiochip4` |
 | `unique_id`    | no       |                       | string  | An ID that uniquely identifies the sensor. Set this to a unique value to allow customization through the UI |
 | `bouncetime`   | no       | `50`                  | integer | The time in milliseconds for port debouncing                                                                |
 | `invert_logic` | no       | `false` (ACTIVE HIGH) | boolean | If `true`, inverts the output logic to ACTIVE LOW                                                           |
 | `pull_mode`    | no       | `UP`                  | string  | Type of internal pull resistor to use: `UP` - pull-up resistor, `DOWN` - pull-down resistor                 |
 
-For more details about the GPIO layout, visit the Wikipedia [article](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) about the Raspberry Pi.
 
 ## Cover
 
-The `rpi_gpio` cover platform allows you to use a Raspberry Pi to control your cover such as Garage doors.
+The `gpio` cover platform allows you to use a GPIO device to control covers, e.g. a garage door.
 
-It uses two pins on the Raspberry Pi.
-
-- The `state_pin` will detect if the cover is closed, and
-- the `relay_pin` will trigger the cover to open or close.
+It uses two pins on the GPIO device:
+  
+  - The `state_pin` will detect if the cover is closed, and
+  - the `relay_pin` will trigger the cover to open or close.
 
 Although you do not need Andrews Hilliday's software controller when you run Home Assistant, he has written clear instructions on how to hook your garage door and sensors up to your Raspberry Pi, which can be found [here](https://github.com/andrewshilliday/garage-door-controller#hardware-setup).
 
 ### Configuration
 
-To enable Raspberry Pi Covers in your installation, add the following to your `configuration.yaml` file:
+Add the following to your `configuration.yaml` file:
 
 ```yaml
 # Basic configuration.yaml entry
 cover:
-  - platform: rpi_gpio
+  - platform: gpio
     covers:
       - relay_pin: 10
         state_pin: 11
@@ -93,16 +105,15 @@ cover:
 ```yaml
 # Full configuration.yaml entry
 cover:
-  - platform: rpi_gpio
+  - platform: gpio
     relay_time: 0.2
     invert_relay: false
     state_pull_mode: "UP"
     invert_state: true
     covers:
-      - relay_pin: 10
-        state_pin: 11
       - relay_pin: 12
         state_pin: 13
+        device: "/dev/gpiochip4"
         name: "Right door"
         unique_id: "right_door_cover_port_13"
 ```
@@ -118,27 +129,25 @@ cover:
 | `covers`          | yes      |         | list    | List of covers                                                                                             |
 | `relay_pin`       | yes      |         | integer | The pin of your Raspberry Pi where the relay is connected                                                  |
 | `state_pin`       | yes      |         | integer | The pin of your Raspberry Pi to retrieve the state                                                         |
+| `device`          | no       | Hardware dependent | string  | Path to the GPIO device, e.g. `/dev/gpiochip4` |
 | `name`            | no       |         | string  | The name for the cover entity                                                                              |
 | `unique_id`       | no       |         | string  | An ID that uniquely identifies the cover. Set this to a unique value to allow customization through the UI |
 
-### Remote Raspberry Pi Cover
-
-If you don't have Home Assistant running on your Raspberry Pi and you want to use it as a remote cover instead, there is a project called [GarageQTPi](https://github.com/Jerrkawz/GarageQTPi) that will work remotely with the [MQTT Cover Component](/integrations/cover.mqtt/). Follow the GitHub instructions to install and configure GarageQTPi and once configured follow the Home Assistant instructions to configure the MQTT Cover.
 
 ## Switch
 
-The `rpi_gpio` switch platform allows you to control the GPIOs of your [Raspberry Pi](https://www.raspberrypi.org/).
+The `gpio` switch platform allows you to control the GPIOs of your device.
 
 ### Configuration
 
-[Legacy switch configuration](https://github.com/thecode/ha-rpi_gpio/blob/main/legacy-config.md#switch)
+[Legacy switch configuration](./legacy-config.md#switch)
 
-To use your Raspberry Pi's GPIO in your installation, add the following to your `configuration.yaml` file:
+Add the following to your `configuration.yaml` file:
 
 ```yaml
 # Basic configuration.yaml entry
 switch:
-  - platform: rpi_gpio
+  - platform: gpio
     switches:
       - port: 11
         name: "Fan Office"
@@ -149,14 +158,12 @@ switch:
 ```yaml
 # Full configuration.yaml entry
 switch:
-  - platform: rpi_gpio
+  - platform: gpio
     switches:
       - port: 11
+        device: "/dev/gpiochip4"
         name: "Fan Office"
         unique_id: "fan_office_switch_port_11"
-      - port: 12
-        name: "Light Desk"
-        unique_id: "light_desk_switch_port_12"
         invert_logic: true
 ```
 
@@ -166,19 +173,7 @@ switch:
 | -------------- | -------- | ------- | --------| ----------------------------------------------------------------------------------------------------------- |
 | `switches`     | yes      |         | list    | List of switch IO ports ([BCM mode pin numbers](https://pinout.xyz/resources/raspberry-pi-pinout.png))      |
 | `name`         | yes      |         | string  | The name for the switch entity                                                                              |
+| `device`       | no       | Hardware dependent | string  | Path to the GPIO device, e.g. `/dev/gpiochip4` |
 | `unique_id`    | no       |         | string  | An ID that uniquely identifies the switch. Set this to a unique value to allow customization through the UI |
 | `invert_logic` | no       | `false` | boolean | If true, inverts the output logic to ACTIVE LOW                                                             |
 
-For more details about the GPIO layout, visit the Wikipedia [article](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) about the Raspberry Pi.
-
-A common question is what does Port refer to, this number is the actual GPIO #, not the pin #.
-For example, if you have a relay connected to pin 11 its GPIO # is 17.
-
-```yaml
-# Basic configuration.yaml entry
-switch:
-  - platform: rpi_gpio
-    switches:
-      - port: 17
-        name: "Speaker Relay"
-```
