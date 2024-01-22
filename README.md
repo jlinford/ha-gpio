@@ -1,16 +1,16 @@
 # Home Assistant GPIO Integration
 
-**This is a libgpiod2 rewrite of https://github.com/thecode/ha-gpio by @thecode.**
+**This is a libgpiod2 rewrite of https://github.com/thecode/ha-rpi_gpio to support generic GPIO devices.**
 
-The `gpio` integration supports the following platforms: `Binary Sensor`, `Cover`, `Switch`.
-It supports any device with libgpiod 2.0.2 or later, i.e. all versions of Raspberry Pi, 
-including Raspberry Pi 5. The platform will guess sensible defaults, or you can use `device` 
-and `port` when defining entities to select the GPIO device (a.k.a chip) and port (a.k.a line).
+This integration supports any device with libgpiod 2.0.2 or later, i.e. all versions of Raspberry Pi, 
+including Raspberry Pi 5. The platform will guess sensible defaults for the GPIO device path, 
+or you can use `device` when defining entities to select the GPIO device (e.g. `/dev/gpiochip4`).
 
 Note that `port` referrs to the GPIO number, not the pin number.  This can be unintuitive on some
-platforms, e.g. the Raspberry Pi.  For example, if you have a relay connected to pin 11 of the
-Raspberry Pi, its GPIO # is 17. See the [Wikipedia article about the Raspberry Pi](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) for more details about the GPIO layout.
+platforms.  For example, if you have a relay connected to pin 11 of the Raspberry Pi, its GPIO number 
+is 17. See the [Wikipedia article about the Raspberry Pi](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) for more details about the GPIO layout.
 
+The `gpio` integration supports the following platforms: `Binary Sensor`, `Cover`, and `Switch`.
 
 # Installation
 
