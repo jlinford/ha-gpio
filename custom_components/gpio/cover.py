@@ -1,4 +1,4 @@
-"""Support for controlling a Raspberry Pi cover."""
+"""Support for controlling a GPIO cover."""
 from __future__ import annotations
 
 from time import sleep
@@ -82,7 +82,7 @@ def setup_platform(
 
 
 class GPIOCover(CoverEntity):
-    """Representation of a Raspberry GPIO cover."""
+    """Representation of a GPIO cover."""
 
     def __init__(
         self,
