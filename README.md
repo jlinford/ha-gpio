@@ -16,7 +16,7 @@ The `gpio` integration supports the following platforms: `Binary Sensor`, `Cover
 
 ## HACS
 
-The recommend way to install `gpio` is through [HACS](https://hacs.xyz/).
+As soon as [this PR](https://github.com/hacs/default/pull/2298) is accepted, the recommend way to install `gpio` will be through [HACS](https://hacs.xyz/).
 
 ## Manual installation
 
