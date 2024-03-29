@@ -4,6 +4,8 @@
 import datetime
 import logging
 import gpiod
+from gpiod import LineSettings
+from gpiod.line import Direction, Bias, Edge, Value
 
 
 from homeassistant.const import (
@@ -60,7 +62,7 @@ def _configure_line(device, port, **kwargs):
     return gpiod.request_lines(
         device, 
         consumer=DOMAIN, 
-        config={port: gpiod.LineSettings(**kwargs)})
+        config={port: LineSettings(**kwargs)})
 
 
 def setup_output(device, port):
@@ -69,7 +71,7 @@ def setup_output(device, port):
     return _configure_line(
         device, 
         port, 
-        direction=gpiod.line.Direction.OUTPUT)
+        direction=Direction.OUTPUT)
 
 
 def setup_input(device, port, pull_mode):
@@ -78,21 +80,16 @@ def setup_input(device, port, pull_mode):
     return _configure_line(
         device,
         port, 
-        direction=gpiod.line.Direction.INPUT,
-        bias=(gpiod.line.Bias.PULL_DOWN if pull_mode == "DOWN" else gpiod.line.Bias.PULL_UP))
+        direction=Direction.INPUT,
+        bias=(Bias.PULL_DOWN if pull_mode == "DOWN" else Bias.PULL_UP))
 
 
 def enable_edge_detect(req, detect_edges, debounce_ms):
     """Add detection for RISING and FALLING events."""
     _LOGGER.debug("Detecting %s edges on %s:%s", detect_edges, req.chip_name, req.lines)
-    edge_detection = {
-        "BOTH": gpiod.line.Edge.BOTH,
-        "RISING": gpiod.line.Edge.RISING,
-        "FALLING": gpiod.line.Edge.FALLING
-    }[detect_edges]
     req.reconfigure_lines(
-        {port: gpiod.LineSettings(edge_detection=edge_detection,
-                                  debounce_period=datetime.timedelta(milliseconds=debounce_ms))
+        {port: LineSettings(edge_detection=getattr(Edge, detect_edges),
+                            debounce_period=datetime.timedelta(milliseconds=debounce_ms))
          for port in req.lines})
 
 
@@ -101,7 +98,7 @@ def write_output(req, value):
     assert (req.num_lines == 1)
     port = req.lines[0]
     _LOGGER.debug("Writing %s on %s:%s", value, req.chip_name, port)
-    req.set_values({port: gpiod.line.Value.ACTIVE if value else gpiod.line.Value.INACTIVE})
+    req.set_values({port: Value.ACTIVE if value else Value.INACTIVE})
 
 
 def read_input(req):
@@ -109,7 +106,7 @@ def read_input(req):
     assert (req.num_lines == 1)
     port = req.lines[0]
     _LOGGER.debug("Reading %s:%s", req.chip_name, port)
-    return (req.get_value(port) == gpiod.line.Value.ACTIVE)
+    return (req.get_value(port) == Value.ACTIVE)
 
 
 def read_edge_events(req, timeout):
