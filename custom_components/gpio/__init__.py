@@ -4,8 +4,8 @@
 import datetime
 import logging
 import gpiod
-from gpiod import LineSettings
 from gpiod.line import Direction, Bias, Edge, Value
+from gpiod.line_settings import LineSettings
 
 
 from homeassistant.const import (
